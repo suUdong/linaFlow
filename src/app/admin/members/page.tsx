@@ -321,6 +321,12 @@ export default function AdminMembers() {
     }
   };
 
+  // 로그아웃 함수 추가
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -338,12 +344,26 @@ export default function AdminMembers() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">회원 관리</h2>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <h1 className="text-2xl font-bold text-gray-900">
+              LinaFlow 관리자
+            </h1>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              로그아웃
+            </button>
+          </div>
+        </div>
+      </div>
 
-          <div className="flex space-x-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col md:flex-row justify-between mb-4 items-start md:items-center gap-4">
+          <nav className="flex space-x-4">
             <button
               onClick={() => router.push("/admin/dashboard")}
               className="text-gray-600 hover:text-gray-900"
@@ -362,7 +382,7 @@ export default function AdminMembers() {
             >
               관리 가이드
             </button>
-          </div>
+          </nav>
         </div>
 
         {error && (

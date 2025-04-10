@@ -11,20 +11,27 @@ export default function Login() {
   const [password, setPassword] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const formRef = useRef<HTMLFormElement>(null);
 
   const inputRefs = useRef<HTMLInputElement[]>([]);
 
   // 이미 로그인된 사용자를 확인하고 리다이렉션
   useEffect(() => {
-    const user = getCurrentUser();
-    if (user) {
-      // 이미 로그인된 경우 적절한 페이지로 리다이렉션
-      if (user.email && user.email.includes("admin")) {
-        router.push("/admin/members");
-      } else {
-        router.push("/videos");
+    try {
+      const user = getCurrentUser();
+      if (user) {
+        // 이미 로그인된 경우 적절한 페이지로 리다이렉션
+        if (user.email && user.email.includes("admin")) {
+          router.push("/admin/members");
+        } else {
+          router.push("/videos");
+        }
       }
+    } catch (error) {
+      console.error("로그인 상태 확인 중 오류 발생:", error);
+    } finally {
+      setInitialLoading(false);
     }
   }, [router]);
 
@@ -147,6 +154,15 @@ export default function Login() {
     }
   };
 
+  // 로딩 중이면 로딩 인디케이터 표시
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">로딩 중...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 p-6 sm:p-8 bg-white rounded-lg shadow-md">
@@ -231,25 +247,6 @@ export default function Login() {
               >
                 회원가입 신청하기
               </Link>
-            </div>
-            <div className="text-sm">
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail("admin@example.com");
-                  setPassword(["1", "2", "3", "4", "5", "6"]);
-                  setTimeout(() => {
-                    if (formRef.current) {
-                      formRef.current.dispatchEvent(
-                        new Event("submit", { cancelable: true, bubbles: true })
-                      );
-                    }
-                  }, 300);
-                }}
-                className="font-medium text-gray-400 hover:text-gray-600"
-              >
-                관리자 로그인
-              </button>
             </div>
           </div>
 

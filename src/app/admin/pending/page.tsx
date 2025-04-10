@@ -12,6 +12,12 @@ export default function AdminPendingMembers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
 
   useEffect(() => {
     checkAdminStatus();
@@ -41,6 +47,7 @@ export default function AdminPendingMembers() {
       if (error) throw error;
 
       setPendingMembers(data || []);
+      setPendingCount(data?.length || 0);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error
@@ -109,14 +116,32 @@ export default function AdminPendingMembers() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
-            회원가입 승인 관리
-          </h2>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <h1 className="text-2xl font-bold text-gray-900">
+              LinaFlow 관리자
+            </h1>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              로그아웃
+            </button>
+          </div>
+        </div>
+      </div>
 
-          <div className="flex space-x-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col md:flex-row justify-between mb-4 items-start md:items-center gap-4">
+          <nav className="flex space-x-4">
+            <button
+              onClick={() => router.push("/admin/dashboard")}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              대시보드
+            </button>
             <button
               onClick={() => router.push("/admin/members")}
               className="text-gray-600 hover:text-gray-900"
@@ -129,7 +154,30 @@ export default function AdminPendingMembers() {
             >
               콘텐츠 관리
             </button>
-          </div>
+            <button
+              onClick={() => router.push("/admin/pending")}
+              className="text-indigo-600 font-medium relative"
+            >
+              가입 승인
+              {pendingMembers.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
+                  {pendingMembers.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => router.push("/admin/guide")}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              관리 가이드
+            </button>
+          </nav>
+        </div>
+
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">
+            회원가입 승인 관리
+          </h2>
         </div>
 
         {error && (
