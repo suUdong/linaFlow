@@ -1,9 +1,6 @@
 import { supabase } from "./supabase";
 import { Member } from "./supabase";
 
-// 관리자 이메일 목록
-const ADMIN_EMAILS = ["admin@example.com"];
-
 export async function signIn(email: string, password: string) {
   try {
     const { data, error } = await supabase
@@ -30,8 +27,8 @@ export async function signIn(email: string, password: string) {
     if (data.password_hash !== password)
       throw new Error("비밀번호가 일치하지 않습니다.");
 
-    // 관리자 여부 확인
-    const isAdmin = ADMIN_EMAILS.includes(data.email);
+    // 관리자 여부를 role 필드로 확인
+    const isAdmin = data.role === "admin";
 
     return { user: data, isAdmin, error: null };
   } catch (error) {
@@ -53,6 +50,7 @@ export function getCurrentUser() {
   try {
     return JSON.parse(user);
   } catch (error) {
+    console.log("error", error);
     return null;
   }
 }
@@ -62,12 +60,12 @@ export function setCurrentUser(user: Member) {
   localStorage.setItem("user", JSON.stringify(user));
 }
 
-export function isAdmin(email: string): boolean {
-  return ADMIN_EMAILS.includes(email);
+export function isAdmin(user: Member): boolean {
+  return user.role === "admin";
 }
 
 export function checkAdminAccess(): boolean {
   const user = getCurrentUser();
   if (!user) return false;
-  return isAdmin(user.email);
+  return user.role === "admin";
 }

@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export default function Home() {
   return (
     <div
@@ -44,21 +42,25 @@ export default function Home() {
         >
           프리미엄 필라테스 콘텐츠 솔루션
         </p>
-        <Link
-          href="/login"
-          style={{
-            display: "inline-block",
-            padding: "0.75rem 1.5rem",
-            fontSize: "1rem",
-            fontWeight: 500,
-            color: "white",
-            backgroundColor: "#4f46e5",
-            borderRadius: "0.375rem",
-            textDecoration: "none",
-          }}
-        >
-          로그인하기
-        </Link>
+        <form action="/login" method="get">
+          <button
+            type="submit"
+            style={{
+              display: "inline-block",
+              padding: "0.75rem 1.5rem",
+              fontSize: "1rem",
+              fontWeight: 500,
+              color: "white",
+              backgroundColor: "#4f46e5",
+              borderRadius: "0.375rem",
+              textDecoration: "none",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            로그인하기
+          </button>
+        </form>
       </div>
     </div>
   );

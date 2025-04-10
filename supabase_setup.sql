@@ -8,7 +8,8 @@ CREATE TABLE members (
   password_hash TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('active', 'expired', 'cancelled', 'pending')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  expired_at TIMESTAMP WITH TIME ZONE
+  expired_at TIMESTAMP WITH TIME ZONE,
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user'))
 );
 
 -- 콘텐츠 테이블 생성
@@ -34,6 +35,7 @@ CREATE TABLE watch_logs (
 -- 인덱스 생성
 CREATE INDEX idx_members_email ON members(email);
 CREATE INDEX idx_members_status ON members(status);
+CREATE INDEX idx_members_role ON members(role);
 CREATE INDEX idx_contents_visible ON contents(visible);
 CREATE INDEX idx_contents_video_key ON contents(video_key);
 CREATE INDEX idx_watch_logs_member ON watch_logs(member_id);
@@ -59,10 +61,10 @@ CREATE POLICY "Full access to all contents for now" ON contents FOR ALL USING (T
 CREATE POLICY "Full access to all logs for now" ON watch_logs FOR ALL USING (TRUE);
 
 -- 샘플 데이터 (선택사항)
-INSERT INTO members (name, nickname, email, password_hash, status)
+INSERT INTO members (name, nickname, email, password_hash, status, role)
 VALUES 
-  ('관리자', '관리자', 'admin@example.com', '123456', 'active'),
-  ('테스트회원', '테스트', 'test@example.com', '123456', 'active');
+  ('관리자', '관리자', 'admin@example.com', '123456', 'active', 'admin'),
+  ('테스트회원', '테스트', 'test@example.com', '123456', 'active', 'user');
 
 INSERT INTO contents (title, description, video_key, youtube_url, visible)
 VALUES 

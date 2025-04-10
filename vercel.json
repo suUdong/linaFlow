@@ -6,11 +6,12 @@
       "use": "@vercel/next"
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/"
-    }
+  "rewrites": [
+    { "source": "/login", "destination": "/login" },
+    { "source": "/register", "destination": "/register" },
+    { "source": "/videos", "destination": "/videos" },
+    { "source": "/admin/:path*", "destination": "/admin/:path*" },
+    { "source": "/watch/:path*", "destination": "/watch/:path*" }
   ],
   "github": {
     "silent": true

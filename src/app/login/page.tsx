@@ -21,8 +21,8 @@ export default function Login() {
     try {
       const user = getCurrentUser();
       if (user) {
-        // 이미 로그인된 경우 적절한 페이지로 리다이렉션
-        if (user.email && user.email.includes("admin")) {
+        // 이미 로그인된 경우 역할 기반으로 페이지 리다이렉션
+        if (user.role === "admin") {
           router.push("/admin/members");
         } else {
           router.push("/videos");

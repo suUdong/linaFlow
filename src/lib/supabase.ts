@@ -15,6 +15,7 @@ export type Member = {
   status: "active" | "expired" | "cancelled" | "pending";
   created_at: string;
   expired_at: string | null;
+  role: "admin" | "user";
 };
 
 export type Content = {
