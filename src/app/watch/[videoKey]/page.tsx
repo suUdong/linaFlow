@@ -66,7 +66,7 @@ export default function WatchVideo() {
         fullscreen: { enabled: true, fallback: true, iosNative: true },
         youtube: {
           cc_load_policy: 0,
-          hl: "ko",
+          hl: "ko", // 인터페이스 언어
           rel: 0,
           modestbranding: 1, // YouTube 로고 최소화
           disablekb: 1, // 키보드 단축키 비활성화
@@ -76,6 +76,11 @@ export default function WatchVideo() {
           iv_load_policy: 3, // 주석 비활성화
           controls: isMobile ? 1 : 2, // 모바일에서는 항상 컨트롤 표시
           noCookie: true, // 쿠키 없이 로드
+          loop: 0, // 반복 재생 비활성화
+          fs: 0, // YouTube 전체 화면 버튼 비활성화 (Plyr 전체 화면 사용)
+          start: 0, // 시작 시간 지정
+          enablejsapi: 1, // API 활성화
+          color: "white", // 플레이어 색상 (빨간색 YouTube 색상 숨김)
         },
       });
 
@@ -86,8 +91,72 @@ export default function WatchVideo() {
           // 유튜브 직접 접근 방지를 위한 속성 추가
           (ytIframe as HTMLIFrameElement).setAttribute(
             "sandbox",
-            "allow-same-origin allow-scripts"
+            "allow-same-origin allow-scripts allow-forms allow-presentation"
           );
+
+          // iframe 내부 클릭 이벤트 방지
+          const iframeDocument = (ytIframe as HTMLIFrameElement)
+            .contentDocument;
+          if (iframeDocument) {
+            try {
+              // 스타일 추가 시도
+              const style = iframeDocument.createElement("style");
+              style.textContent = `
+                .ytp-title { display: none !important; }
+                .ytp-youtube-button { display: none !important; }
+                .ytp-show-cards-title { display: none !important; }
+                .ytp-pause-overlay { display: none !important; }
+                .ytp-chrome-top-buttons { display: none !important; }
+              `;
+              iframeDocument.head.appendChild(style);
+            } catch (e) {
+              console.log("iframe 수정 불가:", e);
+            }
+          }
+
+          // 출처(referrer) 정보 제한 및 iframe 파라미터 추가
+          (ytIframe as HTMLIFrameElement).setAttribute(
+            "referrerpolicy",
+            "no-referrer"
+          );
+        }
+
+        // CSS를 사용하여 YouTube 로고와 제목 숨기기
+        const style = document.createElement("style");
+        style.textContent = `
+          .plyr__video-embed iframe {
+            pointer-events: none; /* iframe 내부 클릭 방지 */
+          }
+          .plyr--youtube .plyr__video-embed iframe {
+            z-index: 1; /* z-index 조정 */
+          }
+          /* 컨트롤바 위에 투명한 오버레이 추가 */
+          .plyr--youtube .plyr__video-embed::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 50px; /* 컨트롤바 위쪽만 덮기 */
+            z-index: 2;
+          }
+        `;
+        document.head.appendChild(style);
+      });
+
+      // 오른쪽 클릭 비활성화
+      if (player.elements.container) {
+        player.elements.container.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          return false;
+        });
+      }
+
+      // 플레이어 이벤트 방지
+      player.on("enterfullscreen", () => {
+        const ytIframe = document.querySelector(".plyr__video-embed iframe");
+        if (ytIframe) {
+          (ytIframe as HTMLIFrameElement).style.pointerEvents = "none";
         }
       });
 

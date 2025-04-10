@@ -22,6 +22,12 @@ export default function Videos() {
     }
 
     fetchContents();
+
+    // 이미지 로딩 테스트
+    const testImg = document.createElement("img");
+    testImg.onload = () => console.log("테스트 이미지 로드 성공");
+    testImg.onerror = () => console.error("테스트 이미지 로드 실패");
+    testImg.src = "https://img.youtube.com/vi/iiLgKKJJVy4/default.jpg";
   }, [router, sortOrder]);
 
   const fetchContents = async () => {
@@ -50,6 +56,23 @@ export default function Videos() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // YouTube URL에서 ID 추출 함수
+  const extractYoutubeId = (url: string) => {
+    const regex =
+      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
+
+  // YouTube 썸네일 URL 생성 함수
+  const getYoutubeThumbnail = (youtubeUrl: string) => {
+    const youtubeId = extractYoutubeId(youtubeUrl);
+    if (!youtubeId) return null;
+
+    // 다양한 품질의 썸네일 중 하나 사용
+    return `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -108,50 +131,102 @@ export default function Videos() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {contents.map((content) => (
-              <div
-                key={content.id}
-                className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => router.push(`/watch/${content.video_key}`)}
-              >
-                <div className="pt-[56.25%] relative bg-gray-200">
-                  <div className="flex items-center justify-center absolute inset-0">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-12 w-12 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
+            {contents.map((content) => {
+              const thumbnailUrl = getYoutubeThumbnail(content.youtube_url);
+              console.log("YouTube URL:", content.youtube_url);
+              console.log("Thumbnail URL:", thumbnailUrl);
+
+              return (
+                <div
+                  key={content.id}
+                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => router.push(`/watch/${content.video_key}`)}
+                >
+                  <div className="pt-[56.25%] relative bg-gray-200">
+                    {thumbnailUrl ? (
+                      <div className="absolute inset-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          className="w-full h-full object-cover"
+                          src={thumbnailUrl}
+                          alt={content.title}
+                          referrerPolicy="no-referrer"
+                          loading="eager"
+                          onError={(e) => {
+                            console.error("이미지 로딩 실패:", thumbnailUrl);
+                            // 이미지 로드 실패시 백업 이미지 시도
+                            const youtubeId = extractYoutubeId(
+                              content.youtube_url
+                            );
+                            if (youtubeId) {
+                              // 다른 썸네일 크기 시도
+                              e.currentTarget.src = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+                            }
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center hover:bg-black hover:bg-opacity-20 transition-opacity">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-12 w-12 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center absolute inset-0">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-12 w-12 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4">
+                    <h3 className="text-lg font-medium text-gray-900 truncate">
+                      {content.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                      {content.description}
+                    </p>
+                    <p className="mt-2 text-xs text-gray-400">
+                      {new Date(content.created_at).toLocaleDateString("ko-KR")}
+                    </p>
                   </div>
                 </div>
-
-                <div className="p-4">
-                  <h3 className="text-lg font-medium text-gray-900 truncate">
-                    {content.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-                    {content.description}
-                  </p>
-                  <p className="mt-2 text-xs text-gray-400">
-                    {new Date(content.created_at).toLocaleDateString("ko-KR")}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
