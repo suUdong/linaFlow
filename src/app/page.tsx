@@ -2,19 +2,14 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
 
 export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const user = getCurrentUser();
-
-    if (user) {
-      router.push("/videos");
-    } else {
-      router.push("/login");
-    }
+    // 항상 로그인 페이지로 리다이렉션합니다.
+    // 로그인 후 필요한 페이지로 이동하는 로직은 로그인 페이지에서 처리합니다.
+    router.push("/login");
   }, [router]);
 
   return (

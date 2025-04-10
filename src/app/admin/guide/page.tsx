@@ -49,6 +49,12 @@ export default function AdminGuide() {
 
           <div className="flex space-x-4">
             <button
+              onClick={() => router.push("/admin/dashboard")}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              대시보드
+            </button>
+            <button
               onClick={() => router.push("/admin/members")}
               className="text-gray-600 hover:text-gray-900"
             >
@@ -59,12 +65,6 @@ export default function AdminGuide() {
               className="text-gray-600 hover:text-gray-900"
             >
               콘텐츠 관리
-            </button>
-            <button
-              onClick={() => router.push("/admin/pending")}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              승인 대기
             </button>
           </div>
         </div>

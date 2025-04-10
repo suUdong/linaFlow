@@ -345,6 +345,12 @@ export default function AdminMembers() {
 
           <div className="flex space-x-4">
             <button
+              onClick={() => router.push("/admin/dashboard")}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              대시보드
+            </button>
+            <button
               onClick={() => router.push("/admin/contents")}
               className="text-gray-600 hover:text-gray-900"
             >

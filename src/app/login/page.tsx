@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn, setCurrentUser } from "@/lib/auth";
+import { signIn, setCurrentUser, getCurrentUser } from "@/lib/auth";
 
 export default function Login() {
   const router = useRouter();
@@ -14,6 +14,19 @@ export default function Login() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const inputRefs = useRef<HTMLInputElement[]>([]);
+
+  // 이미 로그인된 사용자를 확인하고 리다이렉션
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      // 이미 로그인된 경우 적절한 페이지로 리다이렉션
+      if (user.email && user.email.includes("admin")) {
+        router.push("/admin/members");
+      } else {
+        router.push("/videos");
+      }
+    }
+  }, [router]);
 
   // 초기 렌더링 시 입력 참조 설정
   useEffect(() => {
