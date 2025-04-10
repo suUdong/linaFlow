@@ -12,6 +12,7 @@ export default function Register() {
     nickname: "",
     birth_date: "",
     email: "",
+    coupon_code: "",
   });
   const [password, setPassword] = useState(["", "", "", "", "", ""]);
   const [confirmPassword, setConfirmPassword] = useState([
@@ -25,6 +26,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [autoApproved, setAutoApproved] = useState(false);
 
   const passwordRefs = useRef<HTMLInputElement[]>([]);
   const confirmRefs = useRef<HTMLInputElement[]>([]);
@@ -202,6 +204,54 @@ export default function Register() {
         return;
       }
 
+      // 시스템 설정 확인 - 자동 승인 여부
+      const { data: systemSettings, error: settingsError } = await supabase
+        .from("system_settings")
+        .select("auto_approve_signup, default_expiration_months")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (settingsError) throw settingsError;
+
+      // 자동 승인 설정 가져오기 (설정이 없으면 false로 기본값 설정)
+      const autoApproveSignup = systemSettings?.auto_approve_signup || false;
+      // 기본 만료 기간 설정 가져오기 (설정이 없으면 3개월로 기본값 설정)
+      const defaultExpirationMonths =
+        systemSettings?.default_expiration_months || 3;
+
+      // 쿠폰 코드 검증 (입력된 경우에만)
+      let couponIsValid = true;
+      let couponDuration = 0;
+
+      if (formData.coupon_code) {
+        const { data: couponData, error: couponError } = await supabase
+          .from("coupons")
+          .select("*")
+          .eq("code", formData.coupon_code)
+          .eq("is_used", false)
+          .maybeSingle();
+
+        if (couponError) throw couponError;
+
+        if (!couponData) {
+          setError("유효하지 않은 쿠폰 코드입니다.");
+          setLoading(false);
+          return;
+        }
+
+        // 만료 날짜 확인
+        const expiryDate = new Date(couponData.expires_at);
+        if (expiryDate < new Date()) {
+          setError("만료된 쿠폰 코드입니다.");
+          setLoading(false);
+          return;
+        }
+
+        couponIsValid = true;
+        couponDuration = couponData.duration_months;
+      }
+
       // 회원 가입 신청
       const { error: insertError } = await supabase.from("members").insert([
         {
@@ -210,12 +260,49 @@ export default function Register() {
           birth_date: formData.birth_date || null,
           email: formData.email,
           password_hash: passwordString, // 실제 구현에서는 bcrypt로 해시 필요
-          status: "pending",
+          status: autoApproveSignup ? "active" : "pending", // 자동 승인 설정에 따라 상태 결정
           created_at: new Date().toISOString(),
+          coupon_code: formData.coupon_code || null,
+          // 쿠폰 사용 시 쿠폰의 만료일 설정, 그렇지 않으면 기본 만료 기간 적용
+          expired_at:
+            couponDuration > 0
+              ? new Date(
+                  new Date().setMonth(new Date().getMonth() + couponDuration)
+                ).toISOString()
+              : new Date(
+                  new Date().setMonth(
+                    new Date().getMonth() + defaultExpirationMonths
+                  )
+                ).toISOString(),
         },
       ]);
 
       if (insertError) throw insertError;
+
+      // 쿠폰 사용 처리 (유효한 쿠폰이 있는 경우)
+      if (formData.coupon_code && couponIsValid) {
+        // 사용자 ID 조회
+        const { data: newUser } = await supabase
+          .from("members")
+          .select("id")
+          .eq("email", formData.email)
+          .single();
+
+        if (newUser) {
+          // 쿠폰 사용 처리
+          await supabase
+            .from("coupons")
+            .update({
+              is_used: true,
+              used_by: newUser.id,
+              used_at: new Date().toISOString(),
+            })
+            .eq("code", formData.coupon_code);
+        }
+      }
+
+      // 자동 승인 여부 설정
+      setAutoApproved(autoApproveSignup);
 
       // 가입 신청 완료
       setSuccess(true);
@@ -226,6 +313,7 @@ export default function Register() {
         nickname: "",
         birth_date: "",
         email: "",
+        coupon_code: "",
       });
       setPassword(["", "", "", "", "", ""]);
       setConfirmPassword(["", "", "", "", "", ""]);
@@ -244,12 +332,12 @@ export default function Register() {
     const currentRefs = isConfirm ? confirmRefs : passwordRefs;
 
     return (
-      <div className="mt-1 flex justify-between gap-2">
+      <div className="mt-2 flex justify-between gap-2">
         {currentPassword.map((digit, index) => (
           <div key={index} className="w-full relative">
             <input
               id={`${isConfirm ? "confirm-" : ""}password-${index}`}
-              type="password"
+              type="text"
               inputMode="numeric"
               maxLength={1}
               ref={(el) => {
@@ -263,9 +351,10 @@ export default function Register() {
               onPaste={
                 index === 0 ? (e) => handleInputPaste(e, isConfirm) : undefined
               }
-              className="block w-full py-3 text-center font-semibold text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="block w-12 h-12 rounded-lg border border-gray-300 px-3 py-2 text-center shadow-sm text-xl font-semibold focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-colors password-dots"
               required
               disabled={loading}
+              autoComplete="off"
             />
           </div>
         ))}
@@ -274,26 +363,42 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            LinaFlow
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            프리미엄 멤버십 가입 신청
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-pink-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
+        <style jsx global>{`
+          .password-dots {
+            -webkit-text-security: disc;
+            text-security: disc;
+          }
+        `}</style>
+
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <img
+              src="/rena-pilates-logo.png"
+              alt="Rena Pilates Logo"
+              className="h-44 w-auto"
+              onError={(e) => {
+                e.currentTarget.src =
+                  "https://via.placeholder.com/300x120?text=Rena+Pilates";
+              }}
+            />
+          </div>
+          <p className="text-sm text-pink-700 font-medium mb-4 italic">
+            가입 신청서
           </p>
         </div>
 
         {success ? (
-          <div className="bg-green-50 p-4 rounded-md text-center">
-            <p className="text-green-800 mb-4">
-              회원가입 신청이 완료되었습니다. 관리자 승인 후 로그인이
-              가능합니다.
+          <div className="bg-green-50 p-4 rounded-lg text-center border border-green-200 shadow-sm">
+            <p className="text-green-800 mb-4 font-medium">
+              {autoApproved
+                ? "회원가입이 완료되었습니다. 지금 바로 로그인하여 서비스를 이용할 수 있습니다."
+                : "회원가입 신청이 완료되었습니다. 관리자 승인 후 로그인이 가능합니다."}
             </p>
             <button
               onClick={() => router.push("/login")}
-              className="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="inline-flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-colors"
             >
               로그인 페이지로 이동
             </button>
@@ -319,7 +424,7 @@ export default function Register() {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm"
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-3 shadow-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-colors"
                   disabled={loading}
                 />
               </div>
@@ -337,7 +442,7 @@ export default function Register() {
                   type="text"
                   value={formData.nickname}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm"
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-3 shadow-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-colors"
                   disabled={loading}
                 />
               </div>
@@ -355,7 +460,7 @@ export default function Register() {
                   type="date"
                   value={formData.birth_date}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm"
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-3 shadow-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-colors"
                   disabled={loading}
                 />
               </div>
@@ -367,16 +472,49 @@ export default function Register() {
                 >
                   이메일 *
                 </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg
+                      className="h-5 w-5 text-gray-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="pl-10 mt-1 block w-full rounded-lg border border-gray-300 px-3 py-3 shadow-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-colors"
+                    disabled={loading}
+                    placeholder="name@company.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="coupon_code"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  쿠폰 코드 (선택)
+                </label>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
+                  id="coupon_code"
+                  name="coupon_code"
+                  type="text"
+                  value={formData.coupon_code}
                   onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm"
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-3 shadow-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none transition-colors"
                   disabled={loading}
+                  placeholder="쿠폰 코드가 있다면 입력하세요"
                 />
               </div>
 
@@ -405,8 +543,20 @@ export default function Register() {
             </div>
 
             {error && (
-              <div className="bg-red-50 p-4 rounded-md">
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200 shadow-sm flex items-center">
+                <svg
+                  className="h-5 w-5 mr-2 text-red-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {error}
               </div>
             )}
 
@@ -414,7 +564,7 @@ export default function Register() {
               <div className="text-sm">
                 <Link
                   href="/login"
-                  className="font-medium text-indigo-600 hover:text-indigo-500"
+                  className="font-medium text-pink-600 hover:text-pink-800 hover:underline transition-colors"
                 >
                   이미 계정이 있으신가요?
                 </Link>
@@ -423,7 +573,7 @@ export default function Register() {
 
             {loading && (
               <div className="w-full h-1 bg-gray-200 rounded overflow-hidden">
-                <div className="h-full bg-indigo-600 animate-pulse-x"></div>
+                <div className="h-full bg-pink-600 animate-pulse-x"></div>
               </div>
             )}
 
@@ -431,13 +581,27 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white ${
                   loading
-                    ? "bg-indigo-400"
-                    : "bg-indigo-600 hover:bg-indigo-700"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                    ? "bg-pink-400 cursor-not-allowed"
+                    : "bg-pink-600 hover:bg-pink-700"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 shadow-md transform transition-transform duration-150 ease-in-out`}
               >
-                {loading ? "처리 중..." : "회원가입 신청"}
+                <span className="flex items-center">
+                  <svg
+                    className="mr-2 h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {loading ? "처리 중..." : "회원가입 신청"}
+                </span>
               </button>
             </div>
           </form>

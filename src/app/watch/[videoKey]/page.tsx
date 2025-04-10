@@ -291,9 +291,22 @@ export default function WatchVideo() {
               />
             </svg>
           </button>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
-            {content.title}
-          </h2>
+
+          <div className="flex items-center">
+            <div className="w-12 sm:w-16 mr-2 relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/rena-pilates-logo.png"
+                alt="리나 필라테스"
+                width={75}
+                height={25}
+                className="w-full h-auto object-contain filter drop-shadow-sm logo-hover"
+              />
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate flex-1">
+              {content.title}
+            </h2>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg overflow-hidden shadow-sm mb-6">
@@ -321,7 +334,14 @@ export default function WatchVideo() {
           <div className="p-4">
             <p className="text-gray-500">{content.description}</p>
             <p className="mt-2 text-xs text-gray-400">
-              등록일: {new Date(content.created_at).toLocaleDateString("ko-KR")}
+              등록일: {new Date(content.created_at).toLocaleDateString("ko-KR")}{" "}
+              <span>
+                {new Date(content.created_at).toLocaleTimeString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
+              </span>
             </p>
           </div>
         </div>
