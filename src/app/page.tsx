@@ -1,29 +1,60 @@
-"use client";
-
-import Link from "next/link";
-
 export default function Home() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-6 sm:p-8 bg-white rounded-lg shadow-md">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            LinaFlow
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            프리미엄 필라테스 콘텐츠 솔루션
-          </p>
-        </div>
-        <div className="mt-8 space-y-6">
-          <div className="flex justify-center">
-            <Link
-              href="/login"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              로그인하기
-            </Link>
-          </div>
-        </div>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        backgroundColor: "#f9fafb",
+        padding: "1rem",
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "0.5rem",
+          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+          padding: "2rem",
+          width: "100%",
+          maxWidth: "28rem",
+          textAlign: "center",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "2rem",
+            fontWeight: "bold",
+            marginBottom: "0.5rem",
+            color: "#111827",
+          }}
+        >
+          LinaFlow
+        </h1>
+        <p
+          style={{
+            fontSize: "1rem",
+            color: "#6b7280",
+            marginBottom: "2rem",
+          }}
+        >
+          프리미엄 필라테스 콘텐츠 솔루션
+        </p>
+        <a
+          href="/login"
+          style={{
+            display: "inline-block",
+            padding: "0.75rem 1.5rem",
+            fontSize: "1rem",
+            fontWeight: 500,
+            color: "white",
+            backgroundColor: "#4f46e5",
+            borderRadius: "0.375rem",
+            textDecoration: "none",
+          }}
+        >
+          로그인하기
+        </a>
       </div>
     </div>
   );
