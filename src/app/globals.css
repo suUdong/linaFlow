@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
+@tailwind base;
+@tailwind components;
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+  --font-family: Arial, Helvetica, sans-serif;
 }
 
 @theme inline {
@@ -20,7 +23,27 @@
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes pulse-x {
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-pulse-x {
+  animation: pulse-x 1.5s ease-in-out infinite;
 }
