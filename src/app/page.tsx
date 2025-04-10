@@ -1,3 +1,7 @@
+"use client";
+
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div
@@ -40,7 +44,7 @@ export default function Home() {
         >
           프리미엄 필라테스 콘텐츠 솔루션
         </p>
-        <a
+        <Link
           href="/login"
           style={{
             display: "inline-block",
@@ -54,7 +58,7 @@ export default function Home() {
           }}
         >
           로그인하기
-        </a>
+        </Link>
       </div>
     </div>
   );
