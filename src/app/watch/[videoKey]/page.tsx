@@ -60,6 +60,7 @@ export default function WatchVideo() {
 
       // Plyr 초기화 - YouTube로 바로 이동 방지 옵션 추가
       const player = new Plyr(videoRef.current, {
+        // @ts-expect-error - provider 속성은 Plyr에서 사용하지만 타입 정의에 없음
         provider: "youtube",
         playsInline: true,
         fullscreen: { enabled: true, fallback: true, iosNative: true },
@@ -115,13 +116,17 @@ export default function WatchVideo() {
       if (error) throw error;
 
       if (!data) {
-        setError("요청하신 콘텐츠를 찾을 수 없습니다.");
+        setError("콘텐츠를 찾을 수 없습니다.");
         return;
       }
 
       setContent(data);
-    } catch (err: any) {
-      setError(err.message || "콘텐츠를 가져오는 중 오류가 발생했습니다.");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "콘텐츠를 가져오는 중 오류가 발생했습니다."
+      );
     } finally {
       setLoading(false);
     }
